@@ -1,4 +1,4 @@
-# a simple autoscaler
+# a naive autoscaler
 auto-scale kubernetes deployments based on arbitrary datadog metric-series.
 
 - Configure a k8s job to run at some interval, per k8s deployment, ie: 5 minutes.
