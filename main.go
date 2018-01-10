@@ -10,6 +10,7 @@ import (
 )
 
 type ScaleConfig struct {
+	InCluster     bool
 	Namespace     string
 	Deployment    string
 	MinReplicas   int64
@@ -27,6 +28,7 @@ func main() {
 
 func loadConfigFromEnv() ScaleConfig {
 
+	inCluster := !asBool(requiredEnv("LOCAL"))
 	namespace := requiredEnv("NAMESPACE")
 	deployment := requiredEnv("DEPLOYMENT")
 	minReplicas := asInt(requiredEnv("MIN_REPLICAS"))
@@ -36,7 +38,7 @@ func loadConfigFromEnv() ScaleConfig {
 	minWatermark := asFloat(requiredEnv("MIN_WATERMARK"))
 	maxWatermark := asFloat(requiredEnv("MAX_WATERMARK"))
 
-	config := ScaleConfig{namespace, deployment, minReplicas, maxReplicas, ddQuery, ddQueryPeriod, minWatermark, maxWatermark}
+	config := ScaleConfig{inCluster, namespace, deployment, minReplicas, maxReplicas, ddQuery, ddQueryPeriod, minWatermark, maxWatermark}
 	return config
 }
 
@@ -44,6 +46,13 @@ func asInt(value string) int64 {
 	n, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		panic(err.Error())
+	}
+	return n
+}
+func asBool(value string) bool {
+	n, err := strconv.ParseBool(value)
+	if err != nil {
+		n = false
 	}
 	return n
 }

@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -19,7 +20,7 @@ type DeploymentState struct {
 
 func SetDeploymentScale(scaleConfig ScaleConfig, n int64) {
 
-	clientset := getClientset()
+	clientset := getClientset(scaleConfig)
 
 	deploymentsClient := clientset.AppsV1beta1().Deployments(scaleConfig.Namespace)
 	result, err := deploymentsClient.Get(scaleConfig.Deployment, metav1.GetOptions{})
@@ -37,7 +38,7 @@ func SetDeploymentScale(scaleConfig ScaleConfig, n int64) {
 
 func GetDeployment(scaleConfig ScaleConfig) DeploymentState {
 
-	clientset := getClientset()
+	clientset := getClientset(scaleConfig)
 
 	deploymentsClient := clientset.AppsV1beta1().Deployments(scaleConfig.Namespace)
 	result, err := deploymentsClient.Get(scaleConfig.Deployment, metav1.GetOptions{})
@@ -49,13 +50,30 @@ func GetDeployment(scaleConfig ScaleConfig) DeploymentState {
 	return DeploymentState{scaleConfig.Namespace, scaleConfig.Deployment, int64(*result.Spec.Replicas)}
 }
 
-func getClientset() *kubernetes.Clientset {
-	var kubeconfig = filepath.Join(homeDir(), ".kube", "config")
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		panic(err.Error())
+func getConfigFromSomewhere(config ScaleConfig) *rest.Config {
+
+	if !config.InCluster {
+		var kubeconfig = filepath.Join(homeDir(), ".kube", "config")
+		// use the current context in kubeconfig
+
+		config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			panic(err.Error())
+		}
+		return config
+
+	} else {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			panic(err.Error())
+		}
+		return config
 	}
+
+}
+
+func getClientset(scaleConfig ScaleConfig) *kubernetes.Clientset {
+	config := getConfigFromSomewhere(scaleConfig)
 
 	// create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
