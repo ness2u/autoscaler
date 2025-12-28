@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,8 +23,8 @@ func SetDeploymentScale(scaleConfig ScaleConfig, n int64) {
 
 	clientset := getClientset(scaleConfig)
 
-	deploymentsClient := clientset.AppsV1beta1().Deployments(scaleConfig.Namespace)
-	result, err := deploymentsClient.Get(scaleConfig.Deployment, metav1.GetOptions{})
+	deploymentsClient := clientset.AppsV1().Deployments(scaleConfig.Namespace)
+	result, err := deploymentsClient.Get(context.TODO(), scaleConfig.Deployment, metav1.GetOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +33,7 @@ func SetDeploymentScale(scaleConfig ScaleConfig, n int64) {
 	var nnn = int32(n)
 	result.Spec.Replicas = &nnn
 
-	res, err := deploymentsClient.Update(result)
+	res, err := deploymentsClient.Update(context.TODO(), result, metav1.UpdateOptions{})
 	fmt.Printf("deployment: %s (%d replicas)\n", res.Name, *res.Spec.Replicas)
 }
 
@@ -40,8 +41,8 @@ func GetDeployment(scaleConfig ScaleConfig) DeploymentState {
 
 	clientset := getClientset(scaleConfig)
 
-	deploymentsClient := clientset.AppsV1beta1().Deployments(scaleConfig.Namespace)
-	result, err := deploymentsClient.Get(scaleConfig.Deployment, metav1.GetOptions{})
+	deploymentsClient := clientset.AppsV1().Deployments(scaleConfig.Namespace)
+	result, err := deploymentsClient.Get(context.TODO(), scaleConfig.Deployment, metav1.GetOptions{})
 	if err != nil {
 		panic(err)
 	}
